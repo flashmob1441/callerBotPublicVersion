@@ -31,7 +31,6 @@ async def download_slideshow(url: str) -> str:
     params = {
         'url': url
     }
-    session = ClientSession(headers=HEADERS)
     json = await request(method=RequestMethod.GET, url=TIKTOK_API, params=params)
     data = json['data']
     output_file = data['id'] + '.mp4'
@@ -41,13 +40,14 @@ async def download_slideshow(url: str) -> str:
     audio_duration = int(data['music_info']['duration'])
     images = data['images']
     if len(images) > 1:
-        tasks = [asyncio.create_task(download_image(image, session)) for image in images]
-        download_images = list(await asyncio.gather(*tasks))
+        async with ClientSession(headers=HEADERS) as session:
+            tasks = [asyncio.create_task(download_image(image, session)) for image in images]
+            download_images = list(await asyncio.gather(*tasks))
+        await asyncio.sleep(0.25)
         create_slideshow(download_images, audio, audio_duration, output_file)
         [os.remove(image) for image in download_images]
     else:
         create_video(images[0], audio, output_file)
-    await session.close()
     return output_file
 
 
