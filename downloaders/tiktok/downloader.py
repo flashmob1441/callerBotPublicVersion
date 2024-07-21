@@ -14,5 +14,5 @@ async def get_download_video(video_url: str) -> str:
     if images is None:
         video = data['play']
     else:
-        video = await download_slideshow(video_url)
+        video = await download_slideshow(data=data)
     return video

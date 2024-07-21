@@ -25,14 +25,9 @@ HEADERS = {
 }
 
 
-async def download_slideshow(url: str) -> str:
+async def download_slideshow(data: dict) -> str:
     if not os.path.exists(RESULTS_DIR):
         os.makedirs(RESULTS_DIR)
-    params = {
-        'url': url
-    }
-    json = await request(method=RequestMethod.GET, url=TIKTOK_API, params=params)
-    data = json['data']
     output_file = data['id'] + '.mp4'
     output_file = os.path.join(RESULTS_DIR, output_file)
     output_file = str(output_file)
