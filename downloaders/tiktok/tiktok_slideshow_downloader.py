@@ -1,16 +1,12 @@
-import re
-import os
 import asyncio
 import logging
-import aiofiles
+import os
+import re
 import subprocess
-
-from aiohttp import ClientSession
 from urllib.parse import urlparse
 
-from apis.api import request
-from apis.request_methods import RequestMethod
-from utils.api_urls import TIKTOK_API
+import aiofiles
+from aiohttp import ClientSession
 
 IMAGES_DIR = 'downloaders/tiktok/tiktok_slideshow/images'
 RESULTS_DIR = 'downloaders/tiktok/tiktok_slideshow/results'

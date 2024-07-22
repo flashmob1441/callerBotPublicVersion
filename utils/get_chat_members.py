@@ -1,15 +1,15 @@
-from pyrogram import Client
+import os
 
-from config import BOT_TOKEN, API_ID, API_HASH
+from pyrogram import Client
 
 
 async def get_chat_members(chat_id: int) -> list[int]:
     members = []
 
     async with Client("caller",
-                      api_id=API_ID,
-                      api_hash=API_HASH,
-                      bot_token=BOT_TOKEN) as client:
+                      api_id=os.getenv('API_ID'),
+                      api_hash=os.getenv('API_HASH'),
+                      bot_token=os.getenv('BOT_TOKEN')) as client:
         async for member in client.get_chat_members(chat_id):
             if not member.user.is_bot:
                 members.append(member.user.id)
