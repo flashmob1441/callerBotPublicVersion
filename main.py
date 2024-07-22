@@ -24,6 +24,8 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
+    if not os.path.exists(LOG_DIR):
+        os.mkdir(LOG_DIR)
     start_timestamp = time.strftime("%Y%m%d-%H%M%S")
     log_file = os.path.join(LOG_DIR, f'log-{start_timestamp}.log')
     file_logger = logging.FileHandler(log_file, mode='w', encoding='utf-8')
