@@ -133,5 +133,4 @@ cython_debug/
 .idea/
 
 # My files
-config.py
 caller.session

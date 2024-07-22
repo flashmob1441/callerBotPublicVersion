@@ -18,7 +18,7 @@ Telegram bot for summoning group members. Also for uploading videos from TikTok,
 
 ```pip install -r requirements.txt```
 
-5. Set up BOT_TOKEN, API_ID, API_HASH in the ```main``` and ```utils/get_chat_members``` files.
+5. Set up BOT_TOKEN, API_ID, API_HASH in the ```.env``` file. Use the ```ENV_EXAMPLE``` file as a template.
 
 ## Usage
 Run ```main.py```.
