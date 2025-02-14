@@ -1,7 +1,6 @@
-from apis.api import request
-from apis.request_methods import RequestMethod
-from downloaders.tiktok.tiktok_slideshow_downloader import download_slideshow
 from utils.api_urls import TIKTOK_API
+from apis.api import request, RequestMethod
+from downloaders.tiktok.slideshow_downloader import download_slideshow
 
 
 async def get_download_video(video_url: str) -> str:

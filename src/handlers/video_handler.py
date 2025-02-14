@@ -15,6 +15,7 @@ router = Router()
 @router.message(F.text.contains('tiktok.com/'))
 @router.message(F.text.contains('youtube.com/shorts/'))
 @router.message(F.text.contains('instagram.com/reel/'))
+@router.message(F.text.contains('xhslink.com'))
 async def command_videos_handler(message: Message) -> None:
     if message.from_user.id not in BLACKLIST:
         text = message.text

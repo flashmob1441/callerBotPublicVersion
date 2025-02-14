@@ -1,17 +1,16 @@
-import asyncio
-import logging
 import os
 import re
-import subprocess
-from urllib.parse import urlparse
-
+import asyncio
+import logging
 import aiofiles
+import subprocess
+
 from aiohttp import ClientSession
+from urllib.parse import urlparse
 
 IMAGES_DIR = 'downloaders/tiktok/tiktok_slideshow/images'
 RESULTS_DIR = 'downloaders/tiktok/tiktok_slideshow/results'
 TRANSITION_TYPE = 'slideleft'
-# FASTER_TRANSITION = 'wipeleft'
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/126.0.0.0 Safari/537.36',

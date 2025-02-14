@@ -44,3 +44,5 @@ venv.bak/
 
 # Sessions
 *.session*
+
+*.tar

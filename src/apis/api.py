@@ -1,11 +1,15 @@
 import asyncio
 import logging
 
+from enum import Enum
 from aiohttp import ClientSession
 
-from apis.request_methods import RequestMethod
-
 logger = logging.getLogger(__name__)
+
+
+class RequestMethod(Enum):
+    GET = 'GET'
+    POST = 'POST'
 
 
 HEADERS = {

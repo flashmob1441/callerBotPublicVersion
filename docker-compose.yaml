@@ -1,0 +1,8 @@
+services:
+  quizBot:
+    build:
+      context: ./
+    container_name: quizBot
+    image: quiz_bot
+    env_file:
+      - .env
