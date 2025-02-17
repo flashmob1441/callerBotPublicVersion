@@ -1,7 +1,7 @@
 import random
 import logging
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.enums import ParseMode
 from aiogram.types import Message
 from aiogram.filters import Command
@@ -16,6 +16,8 @@ router = Router(name=__name__)
 
 
 @router.message(Command('all'), ChatTypeFilter(chat_type=['group', 'supergroup']))
+@router.message(F.text == '/list@list_2202_bot', ChatTypeFilter(chat_type=['group', 'supergroup']))
+@router.message(F.text == '/team@list_2202_bot', ChatTypeFilter(chat_type=['group', 'supergroup']))
 async def call_all_handler(message: Message) -> None:
     chat_id = message.chat.id
     members_id = await get_chat_members(chat_id)

@@ -17,7 +17,7 @@ async def get_download_url(video_url: str) -> str | None:
     info: dict = await asyncio.to_thread(extract_info)
 
     for video_format in info.get('formats', []):
-        if video_format.get('ext') == 'mp4':
+        if video_format.get('ext') == 'mp4' and 'dash' not in video_format.get('format_id'):
             return video_format.get('url')
 
     return None

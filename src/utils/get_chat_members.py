@@ -1,6 +1,9 @@
 import os
+import logging
 
 from pyrogram import Client, utils
+
+logger = logging.getLogger(__name__)
 
 
 def get_peer_type_new(peer_id: int) -> str:
