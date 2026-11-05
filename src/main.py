@@ -23,7 +23,11 @@ async def main() -> None:
         logger.info("Video download is disabled (VIDEO_DOWNLOAD_ENABLED=false)")
 
     pyro_client = Client(
-        "caller", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
+        "caller",
+        api_id=API_ID,
+        api_hash=API_HASH,
+        bot_token=BOT_TOKEN,
+        workdir=".",
     )
     await pyro_client.start()
     try:
