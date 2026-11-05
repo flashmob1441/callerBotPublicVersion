@@ -8,13 +8,19 @@ from pyrogram import Client
 
 from apis.api import close_session
 from handlers import call_all_handler, video_handler
-from utils.config import API_HASH, API_ID, BOT_TOKEN
+from utils.config import API_HASH, API_ID, BOT_TOKEN, VIDEO_DOWNLOAD_ENABLED
+
+logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
     dp = Dispatcher()
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp.include_routers(call_all_handler.router, video_handler.router)
+    dp.include_router(call_all_handler.router)
+    if VIDEO_DOWNLOAD_ENABLED:
+        dp.include_router(video_handler.router)
+    else:
+        logger.info("Video download is disabled (VIDEO_DOWNLOAD_ENABLED=false)")
 
     pyro_client = Client(
         "caller", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN
