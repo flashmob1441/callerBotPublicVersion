@@ -1,9 +1,8 @@
 import os
-import re
+import uuid
 import asyncio
-import logging
+import tempfile
 import aiofiles
-import subprocess
 
 from aiohttp import ClientSession
 from urllib.parse import urlparse
@@ -21,27 +20,31 @@ HEADERS = {
 
 
 async def download_slideshow(data: dict) -> str:
-    if not os.path.exists(RESULTS_DIR):
-        os.makedirs(RESULTS_DIR)
-    output_file = data['id'] + '.mp4'
-    output_file = os.path.join(RESULTS_DIR, output_file)
-    output_file = str(output_file)
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    os.makedirs(IMAGES_DIR, exist_ok=True)
+    output_file = os.path.join(RESULTS_DIR, f"{data['id']}-{uuid.uuid4().hex[:8]}.mp4")
     audio = data['play']
     audio_duration = int(data['music_info']['duration'])
     images = data['images']
-    if len(images) > 1:
-        async with ClientSession(headers=HEADERS) as session:
-            tasks = [asyncio.create_task(download_image(image, session)) for image in images]
-            download_images = list(await asyncio.gather(*tasks))
-        await asyncio.sleep(0.25)
-        create_slideshow(download_images, audio, audio_duration, output_file)
-        [os.remove(image) for image in download_images]
-    else:
-        create_video(images[0], audio, output_file)
+    try:
+        if len(images) > 1:
+            with tempfile.TemporaryDirectory(dir=IMAGES_DIR) as tmp_dir:
+                async with ClientSession(headers=HEADERS) as session:
+                    download_images = await asyncio.gather(*(
+                        download_image(url, session, os.path.join(tmp_dir, f'{i}{os.path.splitext(urlparse(url).path)[1]}'))
+                        for i, url in enumerate(images)
+                    ))
+                await create_slideshow(list(download_images), audio, audio_duration, output_file)
+        else:
+            await create_video(images[0], audio, output_file)
+    except BaseException:
+        if os.path.exists(output_file):
+            os.remove(output_file)
+        raise
     return output_file
 
 
-def create_slideshow(images: list, audio_file: str, audio_duration: int, output_file: str) -> None:
+async def create_slideshow(images: list, audio_file: str, audio_duration: int, output_file: str) -> None:
     image_duration = 3
     transition_duration = 0.5
     input_image_count = len(images)
@@ -51,9 +54,9 @@ def create_slideshow(images: list, audio_file: str, audio_duration: int, output_
     else:
         images = repeat_elements(images, output_image_count)
 
-    max_width, max_height = get_max_dimensions(images)
+    max_width, max_height = await get_max_dimensions(images)
 
-    result = ['ffmpeg', '-y', '-threads', '1']
+    result = ['ffmpeg', '-y', '-loglevel', 'error', '-threads', '1']
     filter_complex_parts = []
     xfade_parts = []
 
@@ -83,23 +86,18 @@ def create_slideshow(images: list, audio_file: str, audio_duration: int, output_
         '-pix_fmt', 'yuv420p',
         '-movflags', 'faststart',
         '-preset', 'ultrafast',
-        '-crf', '18'
+        '-crf', '18',
+        output_file
     ]
-    result += [output_file, '-async', '1']
-    execute_command(result)
+    await run_command(result)
 
 
-async def download_image(url: str, session: ClientSession) -> str:
-    if not os.path.exists(IMAGES_DIR):
-        os.makedirs(IMAGES_DIR)
-    filename = urlparse(url).path.strip('/').split('/')[-1]
-    filename = re.sub(r'[/:*?"<>|]', '_', filename).strip()
-    file_path = os.path.join(IMAGES_DIR, filename)
+async def download_image(url: str, session: ClientSession, file_path: str) -> str:
     async with session.get(url) as response:
+        response.raise_for_status()
         async with aiofiles.open(file_path, 'wb') as f:
             async for chunk, _ in response.content.iter_chunks():
                 await f.write(chunk)
-    await asyncio.sleep(0.25)
     return file_path
 
 
@@ -107,10 +105,11 @@ def repeat_elements(input_list: list, n: int) -> list:
     return (input_list * ((n // len(input_list)) + 1))[:n]
 
 
-def create_video(image: str, audio_file: str, output_file: str) -> None:
+async def create_video(image: str, audio_file: str, output_file: str) -> None:
     result = [
         'ffmpeg',
         '-y',
+        '-loglevel', 'error',
         '-threads', '1',
         '-framerate', '1',
         '-i', image,
@@ -122,29 +121,29 @@ def create_video(image: str, audio_file: str, output_file: str) -> None:
         '-preset', 'fast',
         '-crf', '18',
         '-r', '25',
-        output_file,
-        '-async', '1'
+        output_file
     ]
-    execute_command(result)
+    await run_command(result)
 
 
-def get_max_dimensions(images: list) -> tuple:
+async def get_max_dimensions(images: list) -> tuple:
     max_width = 0
     max_height = 0
     for image in images:
-        result = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'stream=width,height', '-of',
-                                 'default=noprint_wrappers=1:nokey=1', image],
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        width, height = map(int, result.stdout.decode().split())
-        if width > max_width:
-            max_width = width
-        if height > max_height:
-            max_height = height
+        output = await run_command(['ffprobe', '-v', 'error', '-show_entries', 'stream=width,height', '-of',
+                                   'default=noprint_wrappers=1:nokey=1', image])
+        width, height = map(int, output.split())
+        max_width = max(max_width, width)
+        max_height = max(max_height, height)
     return max_width, max_height
 
 
-def execute_command(command: list) -> None:
-    try:
-        subprocess.run(command)
-    except Exception as e:
-        logging.error(e)
+async def run_command(command: list) -> str:
+    process = await asyncio.create_subprocess_exec(*command,
+                                                   stdout=asyncio.subprocess.PIPE,
+                                                   stderr=asyncio.subprocess.STDOUT)
+    output, _ = await process.communicate()
+    text = output.decode(errors='replace')
+    if process.returncode != 0:
+        raise RuntimeError(f'{command[0]} exited with {process.returncode}: {text[-500:]}')
+    return text
