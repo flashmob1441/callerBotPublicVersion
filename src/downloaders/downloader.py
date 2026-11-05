@@ -1,54 +1,39 @@
-import os
 import asyncio
-import logging
-
-from aiogram import md
-from aiogram.enums import ParseMode
-from aiogram.types import Message, URLInputFile, FSInputFile
+from functools import partial
 
 from downloaders.tiktok import tiktok
-from downloaders import youtube_shorts, instagram, rednote
-from utils.urls import get_source
-
-logger = logging.getLogger(__name__)
+from downloaders.ytdlp import get_download_url
 
 HEAVY_TASKS = asyncio.Semaphore(2)  # ffmpeg / yt-dlp: max concurrent downloads
 
 DOWNLOADERS = {
-    'tiktok': tiktok.get_download_video,
-    'instagram': instagram.get_download_url,
-    'youtube': youtube_shorts.get_download_url,
-    'rednote': rednote.get_download_url,
+    "tiktok": tiktok.get_download_video,
+    "instagram": partial(
+        get_download_url,
+        ie_key="Instagram",
+        pick=lambda f: f.get("ext") == "mp4" and "dash" not in f.get("format_id", ""),
+    ),
+    "youtube": partial(
+        get_download_url,
+        ie_key="Youtube",
+        pick=lambda f: f.get("ext") == "mp4",
+        extra_opts={
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["web"],
+                    "skip": ["hls", "dash", "translated_subs"],
+                }
+            }
+        },
+    ),
+    "rednote": partial(
+        get_download_url,
+        pick=lambda f: f.get("ext") == "mp4" and "direct" in f.get("format_id", ""),
+    ),
 }
 
 
-async def send_video(message: Message, url: str) -> None:
-    source = get_source(url)
-    if source is None:
-        logger.warning(f'Unsupported url {url}')
-        return
-    video_path = None
-    try:
-        async with HEAVY_TASKS:
-            video_path = await DOWNLOADERS[source](url)
-        if not video_path:
-            raise ValueError('downloader returned no video')
-        if video_path.startswith('http'):
-            if 'videoplayback' in video_path or 'xhscdn' in video_path:
-                video = URLInputFile(url=video_path)
-            else:
-                video = video_path
-        else:
-            video = FSInputFile(path=video_path)
-        user = message.from_user.full_name if message.from_user else message.chat.full_name
-        await message.answer_video(video=video,
-                                   caption=md.quote(user or ''),
-                                   supports_streaming=True,
-                                   allow_sending_without_reply=True,
-                                   disable_notification=True,
-                                   parse_mode=ParseMode.MARKDOWN_V2)
-    except Exception:
-        logger.exception(f'Failed to send video {url}')
-    finally:
-        if video_path and not video_path.startswith('http') and os.path.exists(video_path):
-            os.remove(video_path)
+async def download(source: str, url: str) -> str | None:
+    """Возвращает http-ссылку или путь к локальному файлу (или None)."""
+    async with HEAVY_TASKS:
+        return await DOWNLOADERS[source](url)

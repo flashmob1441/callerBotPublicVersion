@@ -13,3 +13,8 @@ dependencies = [
     "tgcrypto",
     "kurigram>=2.2.26",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.3",
+]

@@ -1,1 +1,1 @@
-TIKTOK_API = 'https://www.tikwm.com/api/'
+TIKTOK_API = "https://www.tikwm.com/api/"

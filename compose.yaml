@@ -6,6 +6,8 @@ services:
     env_file: .env
     restart: unless-stopped
     init: true
+    mem_limit: 1g
+    cpus: 2
     read_only: true
     tmpfs:
       - /tmp
