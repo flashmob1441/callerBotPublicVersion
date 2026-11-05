@@ -48,3 +48,4 @@ venv.bak/
 *.tar
 # Runtime data
 data/
+tasks/
