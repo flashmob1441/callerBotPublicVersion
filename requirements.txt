@@ -1,8 +1,0 @@
-Pyrogram~=2.0.106
-aiogram~=3.13.1
-aiohttp~=3.10.11
-aiofiles~=24.1.0
-beautifulsoup4~=4.13.0b2
-lxml~=5.3.0
-yt_dlp~=2025.1.26
-TgCrypto~=1.2.5

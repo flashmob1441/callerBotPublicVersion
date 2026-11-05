@@ -1,0 +1,14 @@
+.git
+.gitattributes
+.gitignore
+.idea
+.venv
+.env
+**/__pycache__
+*.py[cod]
+*.session*
+*.tar
+tasks
+Makefile
+compose.yaml
+Dockerfile

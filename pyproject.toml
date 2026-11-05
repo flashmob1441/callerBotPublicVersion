@@ -1,0 +1,15 @@
+[project]
+name = "caller-bot"
+version = "0.1.0"
+description = "Telegram bot: call-all and video downloader"
+requires-python = ">=3.13"
+dependencies = [
+    "pyrogram",
+    "aiogram",
+    "aiohttp",
+    "aiofiles",
+    "beautifulsoup4",
+    "lxml",
+    "yt-dlp",
+    "tgcrypto",
+]

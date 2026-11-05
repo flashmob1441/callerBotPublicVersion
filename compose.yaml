@@ -1,0 +1,22 @@
+services:
+  caller-bot:
+    build: .
+    image: caller_bot
+    container_name: caller-bot
+    env_file: .env
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./data:/data
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -46,3 +46,5 @@ venv.bak/
 *.session*
 
 *.tar
+# Runtime data
+data/
