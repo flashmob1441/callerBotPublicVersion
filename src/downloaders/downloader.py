@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 
 from aiogram import md
@@ -10,6 +11,8 @@ from downloaders import youtube_shorts, instagram, rednote
 from utils.urls import get_source
 
 logger = logging.getLogger(__name__)
+
+HEAVY_TASKS = asyncio.Semaphore(2)  # ffmpeg / yt-dlp: max concurrent downloads
 
 DOWNLOADERS = {
     'tiktok': tiktok.get_download_video,
@@ -26,7 +29,8 @@ async def send_video(message: Message, url: str) -> None:
         return
     video_path = None
     try:
-        video_path = await DOWNLOADERS[source](url)
+        async with HEAVY_TASKS:
+            video_path = await DOWNLOADERS[source](url)
         if not video_path:
             raise ValueError('downloader returned no video')
         if video_path.startswith('http'):

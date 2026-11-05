@@ -1,8 +1,7 @@
-import asyncio
 import logging
 
 from enum import Enum
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 
 logger = logging.getLogger(__name__)
 
@@ -19,26 +18,30 @@ HEADERS = {
                   'Chrome/110.0.0.0 Safari/537.36'
 }
 
+_session: ClientSession | None = None
+
+
+def _get_session() -> ClientSession:
+    global _session
+    if _session is None or _session.closed:
+        _session = ClientSession(headers=HEADERS, timeout=ClientTimeout(total=30))
+    return _session
+
+
+async def close_session() -> None:
+    if _session is not None and not _session.closed:
+        await _session.close()
+
 
 async def request(method: RequestMethod,
                   url: str,
                   params: dict = None,
                   json: dict = None,
                   headers: dict = None) -> dict:
-    request_headers = HEADERS | headers if headers is not None else HEADERS
-    json_result = {}
-    try:
-        async with ClientSession(headers=request_headers) as session:
-            async with session.request(method=method.value,
-                                       url=url,
-                                       params=params,
-                                       json=json) as response:
-                if response.status == 200:
-                    json_result = await response.json()
-                else:
-                    logger.error(f'Status code error {url} - {response.status}')
-        await asyncio.sleep(0.25)
-    except Exception as e:
-        logger.error(e)
-    finally:
-        return json_result
+    async with _get_session().request(method=method.value,
+                                      url=url,
+                                      params=params,
+                                      json=json,
+                                      headers=headers) as response:
+        response.raise_for_status()
+        return await response.json()

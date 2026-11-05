@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 async def get_download_url(video_url: str) -> str | None:
     ydl_opts = {
         'format': 'bestvideo+bestaudio/best',
+        'socket_timeout': 30,
         'extractor_args': {
             'youtube': {
                 'player_client': ['web'],

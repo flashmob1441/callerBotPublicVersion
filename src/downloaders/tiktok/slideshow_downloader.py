@@ -4,7 +4,7 @@ import asyncio
 import tempfile
 import aiofiles
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from urllib.parse import urlparse
 
 IMAGES_DIR = 'downloaders/tiktok/tiktok_slideshow/images'
@@ -29,7 +29,7 @@ async def download_slideshow(data: dict) -> str:
     try:
         if len(images) > 1:
             with tempfile.TemporaryDirectory(dir=IMAGES_DIR) as tmp_dir:
-                async with ClientSession(headers=HEADERS) as session:
+                async with ClientSession(headers=HEADERS, timeout=ClientTimeout(total=60)) as session:
                     download_images = await asyncio.gather(*(
                         download_image(url, session, os.path.join(tmp_dir, f'{i}{os.path.splitext(urlparse(url).path)[1]}'))
                         for i, url in enumerate(images)
@@ -138,11 +138,16 @@ async def get_max_dimensions(images: list) -> tuple:
     return max_width, max_height
 
 
-async def run_command(command: list) -> str:
+async def run_command(command: list, timeout: float = 180) -> str:
     process = await asyncio.create_subprocess_exec(*command,
                                                    stdout=asyncio.subprocess.PIPE,
                                                    stderr=asyncio.subprocess.STDOUT)
-    output, _ = await process.communicate()
+    try:
+        output, _ = await asyncio.wait_for(process.communicate(), timeout)
+    except BaseException:
+        process.kill()
+        await process.wait()
+        raise
     text = output.decode(errors='replace')
     if process.returncode != 0:
         raise RuntimeError(f'{command[0]} exited with {process.returncode}: {text[-500:]}')
