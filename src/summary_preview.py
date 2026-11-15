@@ -14,6 +14,7 @@ from pyrogram import Client
 
 from apis.api import close_session
 from apis.llm import summarize
+from utils import storage
 from utils.chat_history import fetch_lines
 from utils.config import API_HASH, API_ID, BOT_TOKEN, LLM_API_KEY
 
@@ -25,6 +26,7 @@ async def main(link: str, limit: int, dry: bool) -> None:
     if not dry and not LLM_API_KEY:
         sys.exit("LLM_API_KEY не задан (используйте --dry)")
     chat_id, msg_id = int(f"-100{m[1]}"), int(m[2])
+    storage.init()
 
     async with Client(
         "preview",
@@ -35,7 +37,9 @@ async def main(link: str, limit: int, dry: bool) -> None:
         no_updates=True,
     ) as client:
         t = time.monotonic()
-        lines = await fetch_lines(client, chat_id, msg_id + 1, limit)
+        lines = await fetch_lines(
+            client, chat_id, msg_id + 1, limit, names=storage.get_names()
+        )
     print(f"Собрано {len(lines)} строк за {time.monotonic() - t:.1f} с")
     print("\n".join(lines[:5]), "\n...", *lines[-5:], sep="\n")
     print(f"Размер лога: {sum(map(len, lines))} символов")

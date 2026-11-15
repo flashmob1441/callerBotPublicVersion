@@ -7,8 +7,10 @@ from aiogram.enums import ParseMode
 from pyrogram import Client
 
 from apis.api import close_session
-from handlers import call_all_handler, summary_handler, video_handler
+from handlers import admin_handler, call_all_handler, summary_handler, video_handler
+from utils import storage
 from utils.config import (
+    ADMIN_IDS,
     API_HASH,
     API_ID,
     BOT_TOKEN,
@@ -20,8 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
+    storage.init()
     dp = Dispatcher()
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    # Админка первой: её FSM-хендлеры должны перехватить сообщения админа раньше остальных.
+    if ADMIN_IDS:
+        dp.include_router(admin_handler.router)
+    else:
+        logger.info("Admin panel is disabled (ADMIN_IDS is not set)")
     dp.include_router(call_all_handler.router)
     if VIDEO_DOWNLOAD_ENABLED:
         dp.include_router(video_handler.router)
