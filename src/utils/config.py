@@ -20,6 +20,8 @@ VIDEO_DOWNLOAD_ENABLED = os.getenv(
     "off",
 }
 BLACKLIST = {int(i) for i in os.getenv("BLACKLIST", "").split(",") if i.strip()}
+# Админы панели /admin в ЛС бота. Пусто = панель выключена
+ADMIN_IDS = {int(i) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip()}
 # LLM для /summary (OpenAI-совместимый API). Пустой LLM_API_KEY = /summary выключен
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")

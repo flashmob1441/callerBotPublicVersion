@@ -14,3 +14,7 @@ def allow(key: tuple, cooldown: float) -> bool:
         return False
     _last_hit[key] = now
     return True
+
+
+def reset(key: tuple) -> None:
+    _last_hit.pop(key, None)
