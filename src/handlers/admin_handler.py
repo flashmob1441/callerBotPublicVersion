@@ -63,6 +63,24 @@ def clean_name(text: str) -> str | None:
     return name if 1 <= len(name) <= MAX_NAME else None
 
 
+NAME_LINE = re.compile(r"\s*(\d{1,16})(?:\s*[:=\-–—]\s*|\s+)(.+)")
+
+
+def parse_name_lines(text: str) -> tuple[list[tuple[int, str]], list[str]]:
+    """Строки `id имя` / `id: имя` -> (валидные пары, нераспознанные строки)."""
+    ok: list[tuple[int, str]] = []
+    bad: list[str] = []
+    for line in filter(None, (s.strip() for s in text.splitlines())):
+        m = NAME_LINE.fullmatch(line)
+        uid = parse_user_id(m[1]) if m else None
+        name = clean_name(m[2]) if m else None
+        if uid is None or name is None:
+            bad.append(line)
+        else:
+            ok.append((uid, name))
+    return ok, bad
+
+
 def _short(s: str | None, n: int = 30) -> str:
     s = s or "?"
     return s if len(s) <= n else s[: n - 1] + "…"
@@ -166,7 +184,8 @@ async def cb_del_name(callback: CallbackQuery, callback_data: AdminCb) -> None:
 async def cb_add_name(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(AddName.user)
     await callback.message.answer(
-        "Выберите пользователя кнопкой или пришлите его user_id",
+        "Выберите пользователя кнопкой, пришлите его user_id "
+        "или несколько строк «id Имя» сразу",
         reply_markup=_reply_kb(
             KeyboardButton(
                 text="Выбрать пользователя",
@@ -179,6 +198,25 @@ async def cb_add_name(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 
 
+async def _add_names_batch(message: Message, state: FSMContext, text: str) -> None:
+    ok, bad = parse_name_lines(text)
+    bad_text = "\n".join(html.escape(_short(b, 60)) for b in bad[:10])
+    if bad_text and len(bad) > 10:
+        bad_text += f"\n… и ещё {len(bad) - 10}"
+    if not ok:
+        await message.answer(f"Не разобрал ни одной строки:\n{bad_text}")
+        return
+    for uid, name in ok:
+        storage.set_name(uid, name)
+    await state.clear()
+    head = f"Сохранено: {len(ok)}"
+    if bad:
+        head += f"\nНе разобрал ({len(bad)}):\n{bad_text}"
+    await message.answer(head, reply_markup=ReplyKeyboardRemove())
+    view, kb = _names_view()
+    await message.answer(view, reply_markup=kb)
+
+
 @router.message(AddName.user)
 async def add_name_user(message: Message, state: FSMContext) -> None:
     hint = None
@@ -187,7 +225,11 @@ async def add_name_user(message: Message, state: FSMContext) -> None:
         user_id = u.user_id
         hint = clean_name(f"{u.first_name or ''} {u.last_name or ''}")
     else:
-        user_id = parse_user_id(message.text or "")
+        text = message.text or ""
+        if len(text.split("\n")) > 1 or NAME_LINE.fullmatch(text.strip()):
+            await _add_names_batch(message, state, text)
+            return
+        user_id = parse_user_id(text)
     if user_id is None:
         await message.answer("Нужна кнопка выбора или user_id из цифр")
         return
