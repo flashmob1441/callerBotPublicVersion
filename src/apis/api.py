@@ -39,9 +39,15 @@ async def request(
     params: dict | None = None,
     json: dict | None = None,
     headers: dict | None = None,
+    timeout: float | None = None,
 ) -> dict:
     async with _get_session().request(
-        method=method.value, url=url, params=params, json=json, headers=headers
+        method=method.value,
+        url=url,
+        params=params,
+        json=json,
+        headers=headers,
+        **({"timeout": ClientTimeout(total=timeout)} if timeout else {}),
     ) as response:
         response.raise_for_status()
         return await response.json()

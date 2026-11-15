@@ -7,8 +7,14 @@ from aiogram.enums import ParseMode
 from pyrogram import Client
 
 from apis.api import close_session
-from handlers import call_all_handler, video_handler
-from utils.config import API_HASH, API_ID, BOT_TOKEN, VIDEO_DOWNLOAD_ENABLED
+from handlers import call_all_handler, summary_handler, video_handler
+from utils.config import (
+    API_HASH,
+    API_ID,
+    BOT_TOKEN,
+    LLM_API_KEY,
+    VIDEO_DOWNLOAD_ENABLED,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +27,10 @@ async def main() -> None:
         dp.include_router(video_handler.router)
     else:
         logger.info("Video download is disabled (VIDEO_DOWNLOAD_ENABLED=false)")
+    if LLM_API_KEY:
+        dp.include_router(summary_handler.router)
+    else:
+        logger.info("Summary is disabled (LLM_API_KEY is not set)")
 
     pyro_client = Client(
         "caller",
