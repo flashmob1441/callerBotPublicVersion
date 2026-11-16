@@ -7,7 +7,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import LinkPreviewOptions, Message
 from pyrogram import Client
 
-from apis.llm import summarize
+from apis.llm import render_summary, summarize
 from utils import storage
 from utils.chat_history import fetch_lines
 from utils.config import BLACKLIST
@@ -86,8 +86,7 @@ async def summary_handler(
         await status.edit_text("Анализирую…")
         text = await summarize(lines)
         await status.edit_text(
-            text[:4096],
-            parse_mode=None,
+            **render_summary(text).as_kwargs(),
             link_preview_options=LinkPreviewOptions(is_disabled=True),
         )
     except TimeoutError:
