@@ -13,7 +13,7 @@ import time
 from pyrogram import Client
 
 from apis.api import close_session
-from apis.llm import summarize
+from apis.llm import render_summary, summarize
 from utils import storage
 from utils.chat_history import fetch_lines
 from utils.config import API_HASH, API_ID, BOT_TOKEN, LLM_API_KEY
@@ -51,6 +51,7 @@ async def main(link: str, limit: int, dry: bool) -> None:
     finally:
         await close_session()
     print(f"\nLLM: {time.monotonic() - t:.1f} с, {len(text)} символов\n\n{text}")
+    print(f"\n--- как увидит Telegram (HTML) ---\n{render_summary(text).as_html()}")
 
 
 if __name__ == "__main__":
